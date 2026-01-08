@@ -1,8 +1,9 @@
-name: Deploy to GitHub Pages
+name: Deploy static content to Pages
 
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,36 +15,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: lts/*
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build project
+      - name: Build
         run: npm run build
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
         with:
-          path: ./dist
+          path: "./dist"
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-
-    steps:
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
